@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kamstampwa - Pohara Ayub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* M3 Purple Theme Tokens */
+            --md-sys-color-primary: #6750a4;
+            --md-sys-color-on-primary: #ffffff;
+            --md-sys-color-primary-container: #eaddff;
+            --md-sys-color-on-primary-container: #21005d;
+            --md-sys-color-secondary-container: #e8def8;
+            --md-sys-color-on-secondary-container: #1d192b;
+            --md-sys-color-surface: #fef7ff;
+            --md-sys-color-on-surface: #1d1b20;
+            --md-sys-color-surface-variant: #e7e0eb;
+            --md-sys-color-outline: #79747e;
+            --md-sys-color-surface-container: #f3edf7;
+            --md-sys-color-surface-container-high: #ece6f0;
+            --md-sys-color-error: #b3261e;
+            --md-sys-color-error-container: #f9dedc;
+            --md-sys-color-on-error-container: #410e0b;
+            --md-sys-elevation-3: 0px 4px 8px 3px rgba(0, 0, 0, 0.1), 0px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- LOADING ANIMATION STYLES --- */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(29, 27, 32, 0.7); /* Scrim color */
+            backdrop-filter: blur(4px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            color: white;
+            gap: 20px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--md-sys-color-primary-container);
+            border-radius: 50%;
+            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* -------------------------------- */
+
+        .warning-banner {
+            background-color: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(179, 38, 30, 0.1);
+            z-index: 1000;
+        }
+
+        .scroll-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 16px 160px 16px;
+        }
+
+        .m3-card {
+            background-color: var(--md-sys-color-surface-container);
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .m3-input-container {
+            position: relative;
+            background-color: var(--md-sys-color-surface-container-high);
+            border-radius: 12px 12px 4px 4px;
+            border-bottom: 2px solid var(--md-sys-color-outline);
+            padding: 8px 16px;
+            margin-bottom: 16px;
+        }
+        .m3-input-container:focus-within { border-bottom-color: var(--md-sys-color-primary); }
+        .m3-input { background: transparent; border: none; width: 100%; padding: 8px 0; font-size: 16px; outline: none; color: var(--md-sys-color-on-surface); }
+        .m3-label { font-size: 12px; color: var(--md-sys-color-primary); font-weight: 500; }
+
+        /* M3 FAB ICON ONLY STYLE */
+        .m3-fab-floating {
+            position: fixed;
+            bottom: 104px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--md-sys-elevation-3);
+            border: none;
+            cursor: pointer;
+            z-index: 50;
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+        .m3-fab-floating:active {
+            transform: scale(0.9);
+            box-shadow: none;
+        }
+        .m3-fab-floating:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .photo-chip {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background-color: var(--md-sys-color-surface-variant);
+        }
+        .delete-badge {
+            position: absolute;
+            top: 6px; right: 6px;
+            background: var(--md-sys-color-error);
+            color: white; width: 28px; height: 28px;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+
+        /* Navigasi Bawah Spek M3 2026 */
+        .bottom-nav {
+            height: 80px;
+            background-color: var(--md-sys-color-surface-container);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 100;
+            border-top: 1px solid var(--md-sys-color-surface-variant);
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; flex: 1; cursor: pointer; position: relative;
+            color: var(--md-sys-color-on-surface-variant);
+            text-decoration: none;
+            transition: color 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+        .icon-container {
+            position: relative; 
+            width: 64px; 
+            height: 32px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        .nav-indicator {
+            position: absolute; 
+            inset: 0;
+            background-color: var(--md-sys-color-secondary-container);
+            border-radius: 16px; 
+            opacity: 0; 
+            transform: scaleX(0.5);
+            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+        .nav-icon { 
+            position: relative; 
+            z-index: 1; 
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+        }
+        
+        .nav-item.active .nav-indicator { opacity: 1; transform: scaleX(1); }
+        .nav-item.active .nav-icon { transform: scale(1.05); color: var(--md-sys-color-on-secondary-container); }
+        .nav-item.active { color: var(--md-sys-color-on-surface); font-weight: 700; }
+
+        .nav-icon .filled { display: none; }
+        .nav-item.active .nav-icon .outlined { display: none; }
+        .nav-item.active .nav-icon .filled { display: block; }
+
+        .nav-label {
+            font-size: 12px;
+            letter-spacing: 0.1px;
+            line-height: 16px;
+        }
+
+        #loadingBar {
+            position: fixed; top: 0; left: 0; height: 4px;
+            background: var(--md-sys-color-primary);
+            width: 0%; transition: width 0.3s; z-index: 1100;
+        }
+
+        .clear-btn {
+            background-color: var(--md-sys-color-error);
+            color: white; padding: 4px 12px; border-radius: 8px;
+            font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 4px;
+        }
+
+        .backup-badge {
+            font-size: 9px;
+            color: var(--md-sys-color-primary);
+            background: var(--md-sys-color-primary-container);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+            transition: all 0.2s ease;
+        }
+        .backup-badge.disabled {
+            background: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-outline);
+        }
+
+        /* M3 Switch Style */
+        .m3-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .m3-switch input { opacity: 0; width: 0; height: 0; }
+        .m3-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--md-sys-color-outline);
+            transition: .4s;
+            border-radius: 24px;
+            border: 2px solid var(--md-sys-color-outline);
+        }
+        .m3-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .m3-slider {
+            background-color: var(--md-sys-color-primary);
+            border-color: var(--md-sys-color-primary);
+        }
+        input:checked + .m3-slider:before {
+            transform: translateX(20px);
+            background-color: var(--md-sys-color-on-primary);
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingBar"></div>
+
+    <!-- ELEMENT LOADING OVERLAY -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div class="flex flex-col items-center">
+            <p id="loadingTitle" class="text-lg font-bold tracking-wide">Memproses Foto</p>
+            <p id="loadingProgress" class="text-sm opacity-80">Mohon tunggu sebentar...</p>
+        </div>
+    </div>
+
+    <div class="warning-banner">
+        <svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 -960 960 960">
+            <path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+        </svg>
+        <span>Peringatan: Jangan tutup aplikasi agar data tidak terhapus otomatis!</span>
+    </div>
+
+    <!-- HALAMAN 1: FOTO TO PDF -->
+    <div id="page-home" class="scroll-container">
+        <main class="max-w-lg mx-auto">
+            <div class="m3-card shadow-sm">
+                <div class="m3-input-container">
+                    <label class="m3-label">Nama Pekerjaan</label>
+                    <input type="text" id="jobName" class="m3-input" placeholder="Contoh: Pembersihan rutin">
+                </div>
+                <div class="flex gap-4">
+                    <div class="m3-input-container flex-1">
+                        <label class="m3-label">Tanggal</label>
+                        <input type="date" id="reportDate" class="m3-input">
+                    </div>
+                    <div class="m3-input-container flex-1">
+                        <label class="m3-label">Shift</label>
+                        <select id="shift" class="m3-input">
+                            <option value="Pagi">Pagi</option>
+                            <option value="Siang">Siang</option>
+                            <option value="Malam">Malam</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="m3-card">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500">Laporan PDF</h2>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="backup-status-text backup-badge">Backup Aktif</span>
+                            <label class="m3-switch">
+                                <input type="checkbox" class="backup-toggle-checkbox" checked onchange="toggleBackup(this)">
+                                <span class="m3-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="clearAll('pdf')" class="clear-btn">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 -960 960 960"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                            Hapus
+                        </button>
+                        <span id="pdfPhotoCount" class="bg-[var(--md-sys-color-on-primary-container)] text-white text-xs font-bold px-3 py-1 rounded-full">0</span>
+                    </div>
+                </div>
+                <div class="flex gap-4 mb-6">
+                    <label class="flex-1 bg-white border border-gray-100 p-5 rounded-[24px] flex flex-col items-center gap-2 cursor-pointer shadow-sm active:scale-95 transition-transform">
+                        <svg class="w-8 h-8 text-[var(--md-sys-color-primary)]" fill="currentColor" viewBox="0 -960 960 960">
+                            <path d="M480-320q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Zm0-80q-25 0-42.5-17.5T420-460q0-25 17.5-42.5T480-520q25 0 42.5 17.5T540-460q0 25-17.5 42.5T480-400Zm-320 240q-33 0-56.5-23.5T80-240v-440q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5-23.5T880-680v440q0-33-23.5-56.5T800-160H160Zm0-80h640v-440H658l-74-80H376l-74 80H160v440Zm400-220Z"/>
+                        </svg>
+                        <span class="text-[10px] font-bold text-gray-600 tracking-wider">KAMERA</span>
+                        <input type="file" id="cameraPDF" accept="image/*" capture="environment" class="hidden">
+                    </label>
+                    <label class="flex-1 bg-white border border-gray-100 p-5 rounded-[24px] flex flex-col items-center gap-2 cursor-pointer shadow-sm active:scale-95 transition-transform">
+                        <svg class="w-8 h-8 text-gray-700" fill="currentColor" viewBox="0 -960 960 960">
+                            <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm40-80h480L380-560 240-360l100 134-40-14Zm-40 80v-560 560Z"/>
+                        </svg>
+                        <span class="text-[10px] font-bold text-gray-600 tracking-wider">GALERI</span>
+                        <input type="file" id="galleryPDF" accept="image/*" multiple class="hidden">
+                    </label>
+                </div>
+                <div id="pdfPhotoGrid" class="grid grid-cols-3 gap-3"></div>
+            </div>
+        </main>
+        <!-- FAB ICON PDF: SEND/PAPER PLANE -->
+        <button onclick="generatePDF()" id="btnPDF" class="m3-fab-floating">
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 -960 960 960">
+                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- HALAMAN 2: KAMSTAMPWA -->
+    <div id="page-settings" class="scroll-container hidden">
+        <main class="max-w-lg mx-auto">
+            <div class="m3-card">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="text-xs font-bold uppercase tracking-widest text-gray-500">Kamera Stempel</h2>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="backup-status-text backup-badge">Backup Aktif</span>
+                            <label class="m3-switch">
+                                <input type="checkbox" class="backup-toggle-checkbox" checked onchange="toggleBackup(this)">
+                                <span class="m3-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="clearAll('stamp')" class="clear-btn">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 -960 960 960"><path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/></svg>
+                            Hapus
+                        </button>
+                        <span id="stampPhotoCount" class="bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] px-3 py-1 rounded-full text-xs font-bold">0</span>
+                    </div>
+                </div>
+
+                <label class="border-2 border-dashed border-[var(--md-sys-color-primary)] rounded-[32px] p-12 flex flex-col items-center justify-center cursor-pointer bg-purple-50/50 hover:bg-purple-100/50 transition-colors">
+                    <div class="bg-[var(--md-sys-color-primary-container)] p-5 rounded-[24px] mb-4 shadow-sm">
+                        <svg class="w-10 h-10 text-[var(--md-sys-color-on-primary-container)]" fill="currentColor" viewBox="0 -960 960 960">
+                            <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm font-bold text-[var(--md-sys-color-primary)] tracking-wide">AMBIL FOTO</span>
+                    <input type="file" id="cameraStamp" accept="image/*" capture="environment" class="hidden">
+                </label>
+
+                <div id="stampPhotoGrid" class="grid grid-cols-3 gap-3 mt-8"></div>
+            </div>
+        </main>
+        <!-- FAB ICON SHARE FOTO: SHARE NODES -->
+        <button onclick="shareStampedPhotos()" id="btnShare" class="m3-fab-floating">
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 -960 960 960">
+                <path d="M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38.5 23.5T240-360q-50 0-85-35t-35-85q0-50 35-85t85-35q22 0 43.5 8.5T322-568l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-22 0-43.5-8.5T638-712L356-548q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38.5-23.5T720-360q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-640q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480 280q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160Z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- HALAMAN 3: ABOUT -->
+    <div id="page-about" class="scroll-container hidden">
+        <main class="max-w-lg mx-auto">
+            <div class="m3-card text-center py-12">
+                <div class="w-24 h-24 bg-[var(--md-sys-color-primary-container)] text-[var(--md-sys-color-on-primary-container)] rounded-[32px] flex items-center justify-center mx-auto mb-6 text-4xl font-bold shadow-sm">
+                    A
+                </div>
+                <h2 class="text-2xl font-bold text-[var(--md-sys-color-on-surface)]">Pohara Ayub</h2>
+                <p class="text-sm text-[var(--md-sys-color-primary)] font-medium mb-10 uppercase tracking-widest">Pengembang Aplikasi</p>
+                
+                <div class="space-y-4 text-left">
+                    <a href="https://wa.me/6289637126728" target="_blank" class="flex items-center gap-4 p-4 bg-white rounded-[24px] border border-gray-100 shadow-sm active:scale-95 transition-transform duration-150">
+                        <div class="p-3 bg-green-50 rounded-[16px] text-green-600">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 -960 960 960">
+                                <path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">WhatsApp</p>
+                            <p class="text-sm font-semibold text-gray-800">089637126728</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+
+                    <a href="mailto:ayubpohara2@gmail.com" class="flex items-center gap-4 p-4 bg-white rounded-[24px] border border-gray-100 shadow-sm active:scale-95 transition-transform duration-150">
+                        <div class="p-3 bg-blue-50 rounded-[16px] text-blue-600">
+                            <svg class="w-7 h-7" fill="currentColor" viewBox="0 -960 960 960">
+                                <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T760-160H160Zm0-80h640v-480L480-440 160-720v480Zm320-280 320-200H160l320 200ZM160-240v-480 480Z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Email</p>
+                            <p class="text-sm font-semibold text-gray-800">ayubpohara2@gmail.com</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+                
+                <div class="mt-14 pt-8 border-t border-gray-50">
+                    <span class="text-[11px] font-bold text-gray-300 tracking-[0.2em] uppercase">Versi 3.0.3</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- BOTTOM NAV (M3 2026 PRECISION) -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active" onclick="switchTab(event, 'home')">
+            <div class="icon-container">
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <svg class="outlined w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M320-240h320v-80H320v80Zm0-160h320v-80H320v80ZM240-80q-33 0-56.5-23.5T160-200v-560q0-33 23.5-56.5T240-840h320l240 240v400q0 33-23.5 56.5T640-80H240Zm280-520v-160H240v560h400v-400H520ZM240-760v160-160 560-560Z"/></svg>
+                    <svg class="filled w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M240-80q-33 0-56.5-23.5T160-200v-560q0-33 23.5-56.5T240-840h320l240 240v400q0 33-23.5 56.5T640-80H240Zm280-520h200L520-800v200Z"/></svg>
+                </div>
+            </div>
+            <span class="nav-label">Laporan</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTab(event, 'settings')">
+            <div class="icon-container">
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <svg class="outlined w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-320q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Zm0-80q-25 0-42.5-17.5T420-460q0-25 17.5-42.5T480-520q25 0 42.5 17.5T540-460q0 25-17.5 42.5T480-400Zm-320 240q-33 0-56.5-23.5T80-240v-440q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5-23.5T880-680v440q0-33-23.5-56.5T800-160H160Zm0-80h640v-440H658l-74-80H376l-74 80H160v440Zm400-220Z"/></svg>
+                    <svg class="filled w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-160q-33 0-56.5-23.5T80-240v-440q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5-23.5T880-680v440q0-33-23.5-56.5T800-160H160Zm320-200q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z"/></svg>
+                </div>
+            </div>
+            <span class="nav-label">Kamera</span>
+        </a>
+        <a href="#" class="nav-item" onclick="switchTab(event, 'about')">
+            <div class="icon-container">
+                <div class="nav-indicator"></div>
+                <div class="nav-icon">
+                    <svg class="outlined w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>
+                    <svg class="filled w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm-40-200h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Z"/></svg>
+                </div>
+            </div>
+            <span class="nav-label">Tentang</span>
+        </a>
+    </nav>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+        let pdfPhotos = [];
+        let stampPhotos = [];
+        let isBackupEnabled = true;
+
+        document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+
+        window.onbeforeunload = function() {
+            if (pdfPhotos.length > 0 || stampPhotos.length > 0) return "Data belum disimpan. Keluar?";
+        };
+
+        function toggleBackup(checkbox) {
+            isBackupEnabled = checkbox.checked;
+            document.querySelectorAll('.backup-toggle-checkbox').forEach(cb => cb.checked = isBackupEnabled);
+            document.querySelectorAll('.backup-status-text').forEach(badge => {
+                badge.innerText = isBackupEnabled ? 'Backup Aktif' : 'Backup Nonaktif';
+                isBackupEnabled ? badge.classList.remove('disabled') : badge.classList.add('disabled');
+            });
+        }
+
+        function switchTab(e, tab) {
+            e.preventDefault();
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            
+            document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-settings').classList.add('hidden');
+            document.getElementById('page-about').classList.add('hidden');
+            
+            if(tab === 'home') document.getElementById('page-home').classList.remove('hidden');
+            else if(tab === 'settings') document.getElementById('page-settings').classList.remove('hidden');
+            else if(tab === 'about') document.getElementById('page-about').classList.remove('hidden');
+        }
+
+        document.getElementById('cameraPDF').addEventListener('change', e => handleUpload(e, true, 'pdf'));
+        document.getElementById('galleryPDF').addEventListener('change', e => handleUpload(e, false, 'pdf'));
+        document.getElementById('cameraStamp').addEventListener('change', e => handleUpload(e, true, 'stamp'));
+
+        async function handleUpload(e, isCamera, type) {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+            showLoading(true, `Menyiapkan ${files.length} foto...`);
+            for (let i = 0; i < files.length; i++) {
+                showLoading(true, `Memproses ${i + 1} dari ${files.length}`);
+                try {
+                    const result = await processImage(files[i], isCamera, type);
+                    if (type === 'pdf') pdfPhotos.push(result);
+                    else stampPhotos.push(result);
+                    renderPhotoGrid(type);
+                } catch (err) { console.error("Gagal memproses gambar:", err); }
+            }
+            showLoading(false);
+            e.target.value = '';
+        }
+
+        function autoBackupToDevice(blob, type) {
+            if (!isBackupEnabled) return;
+            const now = new Date();
+            const ts = `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
+            const fileName = `Kamstamp_Backup_${type.toUpperCase()}_${ts}.jpg`;
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(link.href), 100);
+        }
+
+        function processImage(file, isCamera, type) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX = 2048; 
+                        let w = img.width, h = img.height;
+                        if (w > h) { if (w > MAX) { h *= MAX/w; w = MAX; } }
+                        else { if (h > MAX) { w *= MAX/h; h = MAX; } }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d', { alpha: false });
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'medium'; 
+                        ctx.drawImage(img, 0, 0, w, h);
+                        if (isCamera) {
+                            const now = new Date();
+                            const dayName = days[now.getDay()];
+                            const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+                            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                            const stamp = `${dayName}, ${dateStr} ${timeStr}`;
+                            const fontSize = w > h ? Math.floor(w * 0.035) : Math.floor(w * 0.05); 
+                            ctx.font = `bold ${fontSize}px 'Google Sans', sans-serif`;
+                            ctx.textAlign = "center";
+                            ctx.strokeStyle = "rgba(0,0,0,0.7)";
+                            ctx.lineWidth = Math.max(1, fontSize / 8);
+                            ctx.strokeText(stamp, w/2, h - (fontSize * 1.5));
+                            ctx.fillStyle = "#00FF00";
+                            ctx.fillText(stamp, w/2, h - (fontSize * 1.5));
+                        }
+                        const quality = 0.8; 
+                        canvas.toBlob((blob) => {
+                            if (isCamera) autoBackupToDevice(blob, type);
+                            const previewUrl = URL.createObjectURL(blob);
+                            resolve({
+                                id: Date.now() + Math.random(),
+                                preview: previewUrl, 
+                                blob: blob,
+                                ratio: w/h,
+                                canvas: canvas
+                            });
+                        }, 'image/jpeg', quality);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderPhotoGrid(type) {
+            const grid = document.getElementById(type === 'pdf' ? 'pdfPhotoGrid' : 'stampPhotoGrid');
+            const list = type === 'pdf' ? pdfPhotos : stampPhotos;
+            const countLabel = document.getElementById(type === 'pdf' ? 'pdfPhotoCount' : 'stampPhotoCount');
+            grid.innerHTML = '';
+            list.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'photo-chip';
+                div.innerHTML = `
+                    <img src="${p.preview}" class="w-full h-full object-cover">
+                    <div onclick="removePhoto('${p.id}', '${type}')" class="delete-badge">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 -960 960 960"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+                    </div>`;
+                grid.appendChild(div);
+            });
+            countLabel.innerText = list.length;
+        }
+
+        window.removePhoto = (id, type) => {
+            const list = type === 'pdf' ? pdfPhotos : stampPhotos;
+            const idx = list.findIndex(p => p.id == id);
+            if (idx > -1) {
+                URL.revokeObjectURL(list[idx].preview);
+                if (type === 'pdf') pdfPhotos.splice(idx, 1);
+                else stampPhotos.splice(idx, 1);
+            }
+            renderPhotoGrid(type);
+        };
+
+        window.clearAll = (type) => {
+            const list = type === 'pdf' ? pdfPhotos : stampPhotos;
+            if (list.length === 0) return;
+            if (confirm(`Hapus semua (${list.length}) foto?`)) {
+                list.forEach(p => URL.revokeObjectURL(p.preview));
+                if (type === 'pdf') pdfPhotos = []; else stampPhotos = [];
+                renderPhotoGrid(type);
+            }
+        };
+
+        function showLoading(show, message = "Memproses Foto") { 
+            const bar = document.getElementById('loadingBar');
+            const overlay = document.getElementById('loadingOverlay');
+            const progressText = document.getElementById('loadingProgress');
+            if(show) {
+                bar.style.width = '100%'; overlay.style.display = 'flex';
+                progressText.innerText = message;
+            } else {
+                bar.style.width = '0%'; overlay.style.display = 'none';
+            }
+        }
+
+        async function generatePDF() {
+            if (!pdfPhotos.length) return;
+            const btn = document.getElementById('btnPDF');
+            btn.disabled = true;
+            showLoading(true, "Menyusun PDF...");
+            try {
+                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
+                const jobName = document.getElementById('jobName').value || 'Pekerjaan';
+                const dateVal = document.getElementById('reportDate').value;
+                const shift = document.getElementById('shift').value;
+                const d = new Date(dateVal);
+                const dayName = days[d.getDay()];
+                const dateStr = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+                const fileName = `${jobName} ${dayName} ${dateStr} ${shift}`.replace(/\s+/g, '_') + '.pdf';
+
+                for (let i = 0; i < pdfPhotos.length; i++) {
+                    showLoading(true, `Menyusun hal ${i+1} dari ${pdfPhotos.length}`);
+                    const p = pdfPhotos[i];
+                    if (i > 0) doc.addPage();
+                    const pw = doc.internal.pageSize.getWidth();
+                    const ph = doc.internal.pageSize.getHeight();
+                    let dw = pw, dh = dw/p.ratio;
+                    if (dh > ph) { dh = ph; dw = dh * p.ratio; }
+                    doc.addImage(p.canvas.toDataURL('image/jpeg', 0.75), 'JPEG', (pw-dw)/2, (ph-dh)/2, dw, dh, undefined, 'FAST');
+                }
+                const pdfBlob = doc.output('blob');
+                const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                    await navigator.share({ files: [pdfFile], title: 'Laporan Pekerjaan' });
+                } else { doc.save(fileName); }
+            } catch (e) { console.error(e); }
+            finally { btn.disabled = false; showLoading(false); }
+        }
+
+        async function shareStampedPhotos() {
+            if (!stampPhotos.length) return;
+            const btn = document.getElementById('btnShare');
+            btn.disabled = true;
+            showLoading(true, "Mempersiapkan foto...");
+            try {
+                const now = new Date();
+                const files = stampPhotos.map((p, i) => new File([p.blob], `Foto_Pohara_${now.getTime()}_${i}.jpg`, {type: 'image/jpeg'}));
+                if (navigator.share && navigator.canShare && navigator.canShare({files})) {
+                    await navigator.share({ files: files, title: 'Foto Stempel' });
+                } else {
+                    files.forEach(file => {
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+                        URL.revokeObjectURL(a.href);
+                    });
+                }
+            } catch (e) { console.error(e); }
+            finally { btn.disabled = false; showLoading(false); }
+        }
+    </script>
+</body>
+</html>
+
