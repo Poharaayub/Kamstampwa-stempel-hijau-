@@ -41,34 +41,33 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- LOADING ANIMATION STYLES --- */
-        .loading-overlay {
+        /* Full Screen Loading Overlay */
+        #processingOverlay {
             position: fixed;
             inset: 0;
-            background: rgba(29, 27, 32, 0.7); /* Scrim color */
+            background: rgba(254, 247, 255, 0.8);
             backdrop-filter: blur(4px);
+            z-index: 2000;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            color: white;
             gap: 20px;
         }
 
-        .spinner {
+        .m3-loader {
             width: 48px;
             height: 48px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top-color: var(--md-sys-color-primary-container);
+            border: 4px solid var(--md-sys-color-primary-container);
+            border-top: 4px solid var(--md-sys-color-primary);
             border-radius: 50%;
-            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        /* -------------------------------- */
 
         .warning-banner {
             background-color: var(--md-sys-color-error-container);
@@ -108,32 +107,26 @@
         .m3-input { background: transparent; border: none; width: 100%; padding: 8px 0; font-size: 16px; outline: none; color: var(--md-sys-color-on-surface); }
         .m3-label { font-size: 12px; color: var(--md-sys-color-primary); font-weight: 500; }
 
-        /* M3 FAB ICON ONLY STYLE */
         .m3-fab-floating {
             position: fixed;
-            bottom: 104px;
+            bottom: 100px;
             right: 24px;
-            width: 56px;
-            height: 56px;
+            left: 24px;
             background-color: var(--md-sys-color-primary-container);
             color: var(--md-sys-color-on-primary-container);
             border-radius: 16px;
+            padding: 18px 24px;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 12px;
             box-shadow: var(--md-sys-elevation-3);
             border: none;
             cursor: pointer;
+            font-weight: 600;
             z-index: 50;
-            transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-        }
-        .m3-fab-floating:active {
-            transform: scale(0.9);
-            box-shadow: none;
-        }
-        .m3-fab-floating:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
         .photo-chip {
@@ -212,7 +205,7 @@
         #loadingBar {
             position: fixed; top: 0; left: 0; height: 4px;
             background: var(--md-sys-color-primary);
-            width: 0%; transition: width 0.3s; z-index: 1100;
+            width: 0%; transition: width 0.3s ease; z-index: 1100;
         }
 
         .clear-btn {
@@ -276,14 +269,11 @@
 </head>
 <body>
     <div id="loadingBar"></div>
-
-    <!-- ELEMENT LOADING OVERLAY -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="spinner"></div>
-        <div class="flex flex-col items-center">
-            <p id="loadingTitle" class="text-lg font-bold tracking-wide">Memproses Foto</p>
-            <p id="loadingProgress" class="text-sm opacity-80">Mohon tunggu sebentar...</p>
-        </div>
+    
+    <!-- M3 Processing Overlay -->
+    <div id="processingOverlay">
+        <div class="m3-loader"></div>
+        <p id="overlayMessage" class="text-sm font-bold text-[var(--md-sys-color-primary)] tracking-wide uppercase">Memproses...</p>
     </div>
 
     <div class="warning-banner">
@@ -356,11 +346,9 @@
                 <div id="pdfPhotoGrid" class="grid grid-cols-3 gap-3"></div>
             </div>
         </main>
-        <!-- FAB ICON PDF: SEND/PAPER PLANE -->
         <button onclick="generatePDF()" id="btnPDF" class="m3-fab-floating">
-            <svg class="w-7 h-7" fill="currentColor" viewBox="0 -960 960 960">
-                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/>
-            </svg>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-520q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z"/></svg>
+            <span id="btnPDFText">Bagikan PDF</span>
         </button>
     </div>
 
@@ -401,11 +389,9 @@
                 <div id="stampPhotoGrid" class="grid grid-cols-3 gap-3 mt-8"></div>
             </div>
         </main>
-        <!-- FAB ICON SHARE FOTO: SHARE NODES -->
         <button onclick="shareStampedPhotos()" id="btnShare" class="m3-fab-floating">
-            <svg class="w-7 h-7" fill="currentColor" viewBox="0 -960 960 960">
-                <path d="M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38.5 23.5T240-360q-50 0-85-35t-35-85q0-50 35-85t85-35q22 0 43.5 8.5T322-568l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-22 0-43.5-8.5T638-712L356-548q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38.5-23.5T720-360q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-640q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480 280q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160Z"/>
-            </svg>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M720-80q-50 0-85-35t-35-85q0-7 1-14.5t3-13.5L322-392q-17 15-38.5 23.5T240-360q-50 0-85-35t-35-85q0-50 35-85t85-35q22 0 43.5 8.5T322-568l282-164q-2-6-3-13.5t-1-14.5q0-50 35-85t85-35q50 0 85 35t35 85q0 50-35 85t-85 35q-22 0-43.5-8.5T638-712L356-548q2 6 3 13.5t1 14.5q0 7-1 14.5t-3 13.5l282 164q17-15 38.5-23.5T720-360q50 0 85 35t35 85q0 50-35 85t-85 35Zm0-640q17 0 28.5-11.5T760-760q0-17-11.5-28.5T720-800q-17 0-28.5 11.5T680-760q0 17 11.5 28.5T720-720ZM240-440q17 0 28.5-11.5T280-480q0-17-11.5-28.5T240-520q-17 0-28.5 11.5T200-480q0 17 11.5 28.5T240-440Zm480 280q17 0 28.5-11.5T760-200q0-17-11.5-28.5T720-240q-17 0-28.5 11.5T680-200q0 17 11.5 28.5T720-160Z"/></svg>
+            <span id="btnShareText">Bagikan Foto</span>
         </button>
     </div>
 
@@ -471,7 +457,7 @@
                 <div class="nav-indicator"></div>
                 <div class="nav-icon">
                     <svg class="outlined w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M480-320q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Zm0-80q-25 0-42.5-17.5T420-460q0-25 17.5-42.5T480-520q25 0 42.5 17.5T540-460q0 25-17.5 42.5T480-400Zm-320 240q-33 0-56.5-23.5T80-240v-440q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5-23.5T880-680v440q0-33-23.5-56.5T800-160H160Zm0-80h640v-440H658l-74-80H376l-74 80H160v440Zm400-220Z"/></svg>
-                    <svg class="filled w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-160q-33 0-56.5-23.5T80-240v-440q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5-23.5T880-680v440q0-33-23.5-56.5T800-160H160Zm320-200q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z"/></svg>
+                    <svg class="filled w-6 h-6" fill="currentColor" viewBox="0 -960 960 960"><path d="M160-160q-33 0-56.5-23.5T80-240v-440q0-33 23.5-56.5T160-760h126l74-80h240l74 80h126q33 0 56.5 23.5T880-680v440q0-33-23.5-56.5T800-160H160Zm320-200q42 0 71-29t29-71q0-42-29-71t-71-29q-42 0-71 29t-29 71q0 42 29 71t71 29Z"/></svg>
                 </div>
             </div>
             <span class="nav-label">Kamera</span>
@@ -508,7 +494,8 @@
             document.querySelectorAll('.backup-toggle-checkbox').forEach(cb => cb.checked = isBackupEnabled);
             document.querySelectorAll('.backup-status-text').forEach(badge => {
                 badge.innerText = isBackupEnabled ? 'Backup Aktif' : 'Backup Nonaktif';
-                isBackupEnabled ? badge.classList.remove('disabled') : badge.classList.add('disabled');
+                if(isBackupEnabled) badge.classList.remove('disabled');
+                else badge.classList.add('disabled');
             });
         }
 
@@ -533,16 +520,16 @@
         async function handleUpload(e, isCamera, type) {
             const files = Array.from(e.target.files);
             if (!files.length) return;
-            showLoading(true, `Menyiapkan ${files.length} foto...`);
-            for (let i = 0; i < files.length; i++) {
-                showLoading(true, `Memproses ${i + 1} dari ${files.length}`);
-                try {
-                    const result = await processImage(files[i], isCamera, type);
-                    if (type === 'pdf') pdfPhotos.push(result);
-                    else stampPhotos.push(result);
-                    renderPhotoGrid(type);
-                } catch (err) { console.error("Gagal memproses gambar:", err); }
-            }
+            showLoading(true, "Mengolah Gambar...");
+
+            const photoPromises = files.map(file => processImage(file, isCamera, type));
+            try {
+                const results = await Promise.all(photoPromises);
+                if (type === 'pdf') pdfPhotos.push(...results);
+                else stampPhotos.push(...results);
+                renderPhotoGrid(type);
+            } catch (err) { console.error(err); }
+
             showLoading(false);
             e.target.value = '';
         }
@@ -552,6 +539,7 @@
             const now = new Date();
             const ts = `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
             const fileName = `Kamstamp_Backup_${type.toUpperCase()}_${ts}.jpg`;
+            
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = fileName;
@@ -572,17 +560,20 @@
                         let w = img.width, h = img.height;
                         if (w > h) { if (w > MAX) { h *= MAX/w; w = MAX; } }
                         else { if (h > MAX) { w *= MAX/h; h = MAX; } }
+                        
                         canvas.width = w; canvas.height = h;
                         const ctx = canvas.getContext('2d', { alpha: false });
                         ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'medium'; 
+                        ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, w, h);
+
                         if (isCamera) {
                             const now = new Date();
                             const dayName = days[now.getDay()];
                             const dateStr = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
                             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
                             const stamp = `${dayName}, ${dateStr} ${timeStr}`;
+                            
                             const fontSize = w > h ? Math.floor(w * 0.035) : Math.floor(w * 0.05); 
                             ctx.font = `bold ${fontSize}px 'Google Sans', sans-serif`;
                             ctx.textAlign = "center";
@@ -592,16 +583,15 @@
                             ctx.fillStyle = "#00FF00";
                             ctx.fillText(stamp, w/2, h - (fontSize * 1.5));
                         }
-                        const quality = 0.8; 
+
+                        const quality = 0.85; 
                         canvas.toBlob((blob) => {
                             if (isCamera) autoBackupToDevice(blob, type);
-                            const previewUrl = URL.createObjectURL(blob);
                             resolve({
                                 id: Date.now() + Math.random(),
-                                preview: previewUrl, 
+                                data: canvas.toDataURL('image/jpeg', quality), 
                                 blob: blob,
-                                ratio: w/h,
-                                canvas: canvas
+                                ratio: w/h
                             });
                         }, 'image/jpeg', quality);
                     };
@@ -614,96 +604,124 @@
         function renderPhotoGrid(type) {
             const grid = document.getElementById(type === 'pdf' ? 'pdfPhotoGrid' : 'stampPhotoGrid');
             const list = type === 'pdf' ? pdfPhotos : stampPhotos;
-            const countLabel = document.getElementById(type === 'pdf' ? 'pdfPhotoCount' : 'stampPhotoCount');
+            const count = document.getElementById(type === 'pdf' ? 'pdfPhotoCount' : 'stampPhotoCount');
             grid.innerHTML = '';
             list.forEach(p => {
                 const div = document.createElement('div');
                 div.className = 'photo-chip';
                 div.innerHTML = `
-                    <img src="${p.preview}" class="w-full h-full object-cover">
+                    <img src="${p.data}" class="w-full h-full object-cover">
                     <div onclick="removePhoto('${p.id}', '${type}')" class="delete-badge">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 -960 960 960"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
                     </div>`;
                 grid.appendChild(div);
             });
-            countLabel.innerText = list.length;
+            count.innerText = list.length;
         }
 
         window.removePhoto = (id, type) => {
-            const list = type === 'pdf' ? pdfPhotos : stampPhotos;
-            const idx = list.findIndex(p => p.id == id);
-            if (idx > -1) {
-                URL.revokeObjectURL(list[idx].preview);
-                if (type === 'pdf') pdfPhotos.splice(idx, 1);
-                else stampPhotos.splice(idx, 1);
-            }
+            if (type === 'pdf') pdfPhotos = pdfPhotos.filter(p => p.id != id);
+            else stampPhotos = stampPhotos.filter(p => p.id != id);
             renderPhotoGrid(type);
         };
 
         window.clearAll = (type) => {
-            const list = type === 'pdf' ? pdfPhotos : stampPhotos;
-            if (list.length === 0) return;
-            if (confirm(`Hapus semua (${list.length}) foto?`)) {
-                list.forEach(p => URL.revokeObjectURL(p.preview));
+            const count = type === 'pdf' ? pdfPhotos.length : stampPhotos.length;
+            if (count === 0) return;
+            const customMsg = `Hapus semua (${count}) foto?`;
+            if (confirm(customMsg)) {
                 if (type === 'pdf') pdfPhotos = []; else stampPhotos = [];
                 renderPhotoGrid(type);
             }
         };
 
-        function showLoading(show, message = "Memproses Foto") { 
+        // Fungsi Loading Diperbarui
+        function showLoading(show, message = "Memproses...") { 
             const bar = document.getElementById('loadingBar');
-            const overlay = document.getElementById('loadingOverlay');
-            const progressText = document.getElementById('loadingProgress');
+            const overlay = document.getElementById('processingOverlay');
+            const msgEl = document.getElementById('overlayMessage');
+            
             if(show) {
-                bar.style.width = '100%'; overlay.style.display = 'flex';
-                progressText.innerText = message;
+                bar.style.width = '40%';
+                setTimeout(() => { if(show) bar.style.width = '90%'; }, 500);
+                overlay.style.display = 'flex';
+                msgEl.innerText = message;
             } else {
-                bar.style.width = '0%'; overlay.style.display = 'none';
+                bar.style.width = '100%';
+                setTimeout(() => { bar.style.width = '0%'; }, 300);
+                overlay.style.display = 'none';
             }
         }
 
         async function generatePDF() {
             if (!pdfPhotos.length) return;
             const btn = document.getElementById('btnPDF');
+            const btnText = document.getElementById('btnPDFText');
+            
             btn.disabled = true;
-            showLoading(true, "Menyusun PDF...");
+            btnText.innerText = "Mengemas...";
+            showLoading(true, "Membangun Laporan PDF...");
+            
             try {
-                const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
+                // Memastikan data tetap terikat selama proses asinkronus
+                const doc = new jsPDF({ 
+                    orientation: 'p', unit: 'mm', format: 'a4', compress: true 
+                });
+
                 const jobName = document.getElementById('jobName').value || 'Pekerjaan';
                 const dateVal = document.getElementById('reportDate').value;
                 const shift = document.getElementById('shift').value;
                 const d = new Date(dateVal);
+                
                 const dayName = days[d.getDay()];
                 const dateStr = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-                const fileName = `${jobName} ${dayName} ${dateStr} ${shift}`.replace(/\s+/g, '_') + '.pdf';
+                const rawFileName = `${jobName} ${dayName} ${dateStr} ${shift}`;
+                const fileName = rawFileName.replace(/\s+/g, '_') + '.pdf';
 
                 for (let i = 0; i < pdfPhotos.length; i++) {
-                    showLoading(true, `Menyusun hal ${i+1} dari ${pdfPhotos.length}`);
                     const p = pdfPhotos[i];
                     if (i > 0) doc.addPage();
                     const pw = doc.internal.pageSize.getWidth();
                     const ph = doc.internal.pageSize.getHeight();
                     let dw = pw, dh = dw/p.ratio;
                     if (dh > ph) { dh = ph; dw = dh * p.ratio; }
-                    doc.addImage(p.canvas.toDataURL('image/jpeg', 0.75), 'JPEG', (pw-dw)/2, (ph-dh)/2, dw, dh, undefined, 'FAST');
+                    doc.addImage(p.data, 'JPEG', (pw-dw)/2, (ph-dh)/2, dw, dh, undefined, 'FAST');
                 }
+
                 const pdfBlob = doc.output('blob');
                 const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+                showLoading(false);
+
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
                     await navigator.share({ files: [pdfFile], title: 'Laporan Pekerjaan' });
-                } else { doc.save(fileName); }
-            } catch (e) { console.error(e); }
-            finally { btn.disabled = false; showLoading(false); }
+                } else {
+                    doc.save(fileName);
+                }
+            } catch (e) { 
+                console.error(e);
+                showLoading(false);
+            } finally { 
+                btn.disabled = false; 
+                btnText.innerText = "Bagikan PDF"; 
+            }
         }
 
         async function shareStampedPhotos() {
             if (!stampPhotos.length) return;
             const btn = document.getElementById('btnShare');
+            const btnText = document.getElementById('btnShareText');
+            
             btn.disabled = true;
-            showLoading(true, "Mempersiapkan foto...");
+            btnText.innerText = "Menyiapkan...";
+            showLoading(true, "Menyiapkan Foto Stempel...");
+
             try {
                 const now = new Date();
                 const files = stampPhotos.map((p, i) => new File([p.blob], `Foto_Pohara_${now.getTime()}_${i}.jpg`, {type: 'image/jpeg'}));
+                
+                showLoading(false);
+
                 if (navigator.share && navigator.canShare && navigator.canShare({files})) {
                     await navigator.share({ files: files, title: 'Foto Stempel' });
                 } else {
@@ -713,8 +731,13 @@
                         URL.revokeObjectURL(a.href);
                     });
                 }
-            } catch (e) { console.error(e); }
-            finally { btn.disabled = false; showLoading(false); }
+            } catch (e) { 
+                console.error(e); 
+                showLoading(false);
+            } finally { 
+                btn.disabled = false; 
+                btnText.innerText = "Bagikan Foto"; 
+            }
         }
     </script>
 </body>
